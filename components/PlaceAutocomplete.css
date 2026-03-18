@@ -1,89 +1,233 @@
+/* ── Base container ── */
 .autocomplete-container {
   position: relative;
   width: 100%;
-  max-width: 480px;
 }
 
+/* ── Input box ── */
 .autocomplete-box {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: #fff;
-  border: 0.5px solid #ddd;
-  border-radius: 12px;
+  gap: 8px;
   padding: 10px 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  border: 1.5px solid #e2e2e2;
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .autocomplete-box.focused {
-  border-color: #999;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  border-color: #4f8ef7;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.12);
 }
 
 .autocomplete-icon {
+  color: #9ca3af;
   flex-shrink: 0;
-  opacity: 0.4;
 }
 
 .autocomplete-input {
   flex: 1;
   border: none;
   outline: none;
-  font-size: 14px;
-  background: transparent;
-  font-family: inherit;
+  font-size: 15px;
   color: #111;
+  background: transparent;
+  min-width: 0;
+}
+
+.autocomplete-input::placeholder {
+  color: #b0b6c1;
 }
 
 .autocomplete-loading {
-  font-size: 11px;
-  color: #aaa;
-  flex-shrink: 0;
+  font-size: 13px;
+  color: #9ca3af;
+  letter-spacing: 2px;
 }
 
+.autocomplete-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: #e9eaec;
+  border-radius: 50%;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+
+.autocomplete-clear-btn:hover {
+  background: #d1d5db;
+}
+
+/* ── Desktop dropdown ── */
 .autocomplete-dropdown {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   right: 0;
   background: #fff;
-  border: 0.5px solid #e5e5e5;
+  border: 1.5px solid #e8e8e8;
   border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 6px 0;
   z-index: 50;
   overflow: hidden;
 }
 
 .autocomplete-item {
-  padding: 10px 14px;
-  cursor: pointer;
   display: flex;
-  align-items: baseline;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
   transition: background 0.1s;
 }
 
 .autocomplete-item:hover {
-  background: #f9f9f9;
+  background: #f5f7ff;
+}
+
+.autocomplete-item-pin {
+  color: #9ca3af;
+  flex-shrink: 0;
 }
 
 .autocomplete-item-main {
-  font-weight: 500;
-  font-size: 13px;
-  color: black;
-}
-
-.autocomplete-item-secondary {
-  font-size: 12px;
-  color: black;
-  
+  font-size: 14px;
+  color: #1a1a1a;
+  line-height: 1.4;
 }
 
 .autocomplete-attribution {
-  padding: 6px 14px;
+  padding: 8px 16px;
   font-size: 11px;
-  color: #bbb;
-  border-top: 0.5px solid #f0f0f0;
+  color: #c0c5cf;
+  text-align: right;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 4px;
+}
+
+/* ─────────────────────────────────────────────
+   Mobile full-screen overlay
+───────────────────────────────────────────── */
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #fff;
+
+  display: flex;
+  flex-direction: column;
+
+  /* Hidden state — slides down off-screen */
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease;
+}
+
+.mobile-overlay--open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Header bar: back button + input */
+.mobile-overlay-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  /* Respect iOS notch */
+  padding-top: max(14px, env(safe-area-inset-top));
+}
+
+.mobile-overlay-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: none;
+  color: #374151;
+  cursor: pointer;
+  border-radius: 8px;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+
+.mobile-overlay-back:hover {
+  background: #f3f4f6;
+}
+
+.mobile-overlay-input-box {
+  flex: 1;
+  /* Slightly smaller radius in context of overlay */
+  border-radius: 10px;
+}
+
+/* Clear × button inside overlay input */
+.mobile-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: #e9eaec;
+  border-radius: 50%;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+
+.mobile-clear-btn:hover {
+  background: #d1d5db;
+}
+
+/* Scrollable results list */
+.mobile-overlay-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+/* Override dropdown to be non-absolute in overlay */
+.mobile-overlay-body .overlay-dropdown {
+  position: static;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 8px 0;
+}
+
+.mobile-overlay-body .autocomplete-item {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f7f7f7;
+}
+
+.mobile-overlay-body .autocomplete-item:hover {
+  background: #f5f7ff;
+}
+
+/* Hint text when empty */
+.mobile-overlay-hint {
+  padding: 40px 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+  line-height: 1.6;
 }
