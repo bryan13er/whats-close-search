@@ -5,14 +5,6 @@ import './PlaceAutocomplete.css';
 
 const places = new PlacesAPI(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 
-function useDebounce(fn, delay) {
-  const timer = useRef(null);
-  return useCallback((...args) => {
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => fn(...args), delay);
-  }, [fn, delay]);
-}
-
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -193,6 +185,9 @@ export default function PlaceAutocomplete({ placeholder = 'Search a place...', o
   const containerRef = useRef(null);
   const mobileInputRef = useRef(null);
   const isMobile = useIsMobile();
+  const timer = useRef(null);
+  // ms value passes to timeout function
+  const delay = 275;
 
   // Lock body scroll when mobile overlay is open
   useEffect(() => {
@@ -200,7 +195,12 @@ export default function PlaceAutocomplete({ placeholder = 'Search a place...', o
     return () => { document.body.style.overflow = ''; };
   }, [mobileOverlayOpen]);
 
-  const fetchSuggestions = useCallback(async (value) => {
+
+  // get the suggestions based on input value by user
+  // a call to this function gets set up through the timeout
+  // i.e. when a user stops typing the call will execute after
+  // 300ms 
+  async function getSuggestions (value) {
     if (value.length < 3) { setSuggestions([]); return; }
     setLoading(true);
     try {
@@ -213,13 +213,16 @@ export default function PlaceAutocomplete({ placeholder = 'Search a place...', o
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const debouncedFetch = useDebounce(fetchSuggestions, 300);
-
+  }
+  
   const handleChange = (e) => {
     setInput(e.target.value);
-    debouncedFetch(e.target.value);
+    // put the logic in here 
+    clearTimeout(timer.current);
+    // has to be done with an arrow function because it takes an arg 
+    // otherwise it won't work 
+    timer.current = setTimeout(() => getSuggestions(e.target.value), delay);
+
   };
 
   const handleSelect = (suggestion) => {
