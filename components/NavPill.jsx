@@ -7,14 +7,26 @@ const places = new PlacesAPI(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 const DELAY = 275;
 
 function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(null);
+
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
-    setIsMobile(mq.matches);
-    const handler = (e) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+
+    const updateIsMobile = (event) => {
+      setIsMobile(event?.matches ?? mq.matches);
+    };
+
+    updateIsMobile();
+
+    if (mq.addEventListener) {
+      mq.addEventListener('change', updateIsMobile);
+      return () => mq.removeEventListener('change', updateIsMobile);
+    }
+
+    mq.addListener(updateIsMobile);
+    return () => mq.removeListener(updateIsMobile);
   }, [breakpoint]);
+
   return isMobile;
 }
 
@@ -124,7 +136,9 @@ export default function NavPill({ onSelect }) {
   const destInputRef = useRef(null);
   const mobileInputRef = useRef(null);
   const timer = useRef(null);
+  const requestSeq = useRef(0);
   const isMobile = useIsMobile();
+  const shouldRenderMobile = isMobile === true;
 
   useEffect(() => {
     document.body.style.overflow = mobileOverlay ? 'hidden' : '';
@@ -135,6 +149,8 @@ export default function NavPill({ onSelect }) {
     const handler = (e) => {
       if (!pillRef.current?.contains(e.target)) {
         setActiveField(null);
+        clearTimeout(timer.current);
+        requestSeq.current += 1;
         setSuggestions([]);
       }
     };
@@ -142,20 +158,42 @@ export default function NavPill({ onSelect }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  function invalidateSuggestions() {
+    clearTimeout(timer.current);
+    requestSeq.current += 1;
+    setSuggestions([]);
+  }
+
   async function getSuggestions(value) {
-    if (value.length < 3) { setSuggestions([]); return; }
+    if (value.length < 3) {
+      invalidateSuggestions();
+      return;
+    }
+
+    const requestId = ++requestSeq.current;
+
     try {
       const results = await places.autocomplete(value);
+      if (requestId !== requestSeq.current) return;
       setSuggestions(results.slice(0, 5));
     } catch (err) {
-      setSuggestions([]);
+      if (requestId === requestSeq.current) {
+        setSuggestions([]);
+      }
     }
   }
 
   function handleChange(setter, e) {
-    setter(e.target.value);
+    const value = e.target.value;
+    setter(value);
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => getSuggestions(e.target.value), DELAY);
+
+    if (value.length < 3) {
+      invalidateSuggestions();
+      return;
+    }
+
+    timer.current = setTimeout(() => getSuggestions(value), DELAY);
   }
 
   function handleSelect(suggestion) {
@@ -166,24 +204,47 @@ export default function NavPill({ onSelect }) {
     } else {
       setDestInput(label); setDestLabel(label);
     }
-    setSuggestions([]); setActiveField(null); setMobileOverlay(null);
+    invalidateSuggestions();
+    setActiveField(null); setMobileOverlay(null);
     onSelect?.({ field: activeField ?? mobileOverlay, label, placeId });
   }
 
   function handleClear(field) {
     if (field === 'origin') {
       setOriginInput(''); setOriginLabel(''); 
-      if (isMobile) mobileInputRef.current?.focus();
+      if (shouldRenderMobile) mobileInputRef.current?.focus();
       else originInputRef.current?.focus(); 
     } else {
       setDestInput(''); setDestLabel(''); 
-      if (isMobile) mobileInputRef.current?.focus();
+      if (shouldRenderMobile) mobileInputRef.current?.focus();
       else destInputRef.current?.focus(); 
     }
-    setSuggestions([]);
+    invalidateSuggestions();
   }
 
-  if (!isMobile) {
+  function handleFieldActivate(field, value) {
+    setActiveField(field);
+    if (value.length >= 3) {
+      getSuggestions(value);
+    } else {
+      invalidateSuggestions();
+    }
+  }
+
+  function handleMobileOverlayOpen(field, value) {
+    setMobileOverlay(field);
+    if (value.length >= 3) {
+      getSuggestions(value);
+    } else {
+      invalidateSuggestions();
+    }
+  }
+
+  if (isMobile === null) {
+    return null;
+  }
+
+  if (!shouldRenderMobile) {
     return (
       <div ref={pillRef} className="np-pill-wrapper">
         <div className={`np-pill ${activeField ? 'np-pill--focused' : ''}`}>
@@ -195,7 +256,7 @@ export default function NavPill({ onSelect }) {
             placeholder="Where from?"
             active={activeField === 'origin'}
             onChange={(e) => handleChange(setOriginInput, e)}
-            onFocus={() => { setActiveField('origin'); if (originInput.length >= 3) getSuggestions(originInput); }}
+            onFocus={() => handleFieldActivate('origin', originInput)}
             onClear={(e) => { e.stopPropagation(); handleClear('origin'); }}
           />
           <div className="np-pill__divider" />
@@ -207,7 +268,7 @@ export default function NavPill({ onSelect }) {
             placeholder="Where to?"
             active={activeField === 'dest'}
             onChange={(e) => handleChange(setDestInput, e)}
-            onFocus={() => { setActiveField('dest'); if (destInput.length >= 3) getSuggestions(destInput); }}
+            onFocus={() => handleFieldActivate('dest', destInput)}
             onClear={(e) => { e.stopPropagation(); handleClear('dest'); }}
           />
         </div>
@@ -222,7 +283,7 @@ export default function NavPill({ onSelect }) {
   return (
     <>
       <div className="np-pill np-pill--mobile">
-        <div className="np-mobile-row" onClick={() => setMobileOverlay('origin')}>
+        <div className="np-mobile-row" onClick={() => handleMobileOverlayOpen('origin', originInput)}>
           <HomeIcon />
           <div className="np-mobile-row__body">
             <span className="np-field__label">Origin</span>
@@ -232,7 +293,7 @@ export default function NavPill({ onSelect }) {
           </div>
         </div>
         <div className="np-pill__divider np-pill__divider--horizontal" />
-        <div className="np-mobile-row" onClick={() => setMobileOverlay('dest')}>
+        <div className="np-mobile-row" onClick={() => handleMobileOverlayOpen('dest', destInput)}>
           <DestIcon />
           <div className="np-mobile-row__body">
             <span className="np-field__label">Destination</span>
@@ -249,7 +310,7 @@ export default function NavPill({ onSelect }) {
           placeholder={mobileOverlay === 'origin' ? 'Where from?' : 'Where to?'}
           suggestions={suggestions}
           inputRef={mobileInputRef}
-          onClose={() => { setMobileOverlay(null); setSuggestions([]); }}
+          onClose={() => { setMobileOverlay(null); invalidateSuggestions(); }}
           onChange={(e) => handleChange(mobileSetter, e)}
           onSelect={handleSelect}
           onClear={() => handleClear(mobileOverlay)}

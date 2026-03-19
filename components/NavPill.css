@@ -56,6 +56,7 @@
 .np-field--active { background: #f5f8ff; }
 .np-field__icon { color: #9ca3af; flex-shrink: 0; }
 .np-field--active .np-field__icon { color: #4f8ef7; }
+.np-field--active .np-field__label { color: #4f8ef7; }
 
 .np-field__body {
   display: flex;
