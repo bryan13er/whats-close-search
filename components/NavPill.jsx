@@ -1,30 +1,29 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { PlacesAPI } from '@/lib/AutoCompleteAPI';
 import './NavPill.css';
 
 const places = new PlacesAPI(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 const DELAY = 275;
 
+const FIELDS = [
+  { id: 'origin', label: 'Origin', placeholder: 'Where from?', icon: HomeIcon },
+  { id: 'dest',   label: 'Destination', placeholder: 'Where to?', icon: DestIcon },
+];
+
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(null);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
-
-    const updateIsMobile = (event) => {
-      setIsMobile(event?.matches ?? mq.matches);
-    };
-
-    updateIsMobile();
-
+    const update = (e) => setIsMobile(e?.matches ?? mq.matches);
+    update();
     if (mq.addEventListener) {
-      mq.addEventListener('change', updateIsMobile);
-      return () => mq.removeEventListener('change', updateIsMobile);
+      mq.addEventListener('change', update);
+      return () => mq.removeEventListener('change', update);
     }
-
-    mq.addListener(updateIsMobile);
-    return () => mq.removeListener(updateIsMobile);
+    mq.addListener(update);
+    return () => mq.removeListener(update);
   }, [breakpoint]);
 
   return isMobile;
@@ -66,10 +65,24 @@ function DestIcon() {
   );
 }
 
-function PillField({ fieldRef, inputRef, icon, label, value, placeholder, onChange, onFocus, onClear, active }) {
+function ClearButton({ visible, onMouseDown }) {
+  return (
+    <button
+      className={`np-field__clear ${visible ? 'np-field__clear--visible' : 'np-field__clear--hidden'}`}
+      onMouseDown={onMouseDown}
+      aria-label="Clear"
+    >
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+        <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    </button>
+  );
+}
+
+function PillField({ fieldRef, inputRef, icon: Icon, label, value, placeholder, onChange, onFocus, onClear, active }) {
   return (
     <div ref={fieldRef} className={`np-field ${active ? 'np-field--active' : ''}`}>
-      {icon}
+      <Icon />
       <div className="np-field__body">
         <span className="np-field__label">{label}</span>
         <input
@@ -81,39 +94,31 @@ function PillField({ fieldRef, inputRef, icon, label, value, placeholder, onChan
           placeholder={placeholder}
         />
       </div>
-      <button 
-        className={`np-field__clear ${value.length > 0 ? 'np-field__clear--visible' : 'np-field__clear--hidden'}`} 
-        onMouseDown={onClear} 
-        aria-label="Clear"
-      >
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-          <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-      </button>
+      <ClearButton visible={value.length > 0} onMouseDown={onClear} />
     </div>
   );
 }
 
-function MobileOverlay({ which, input, placeholder, suggestions, onClose, onChange, onSelect, onClear, inputRef }) {
+function MobileOverlay({ field, input, suggestions, onClose, onChange, onSelect, onClear, inputRef }) {
   useEffect(() => { inputRef.current?.focus(); }, [inputRef]);
+  const Icon = field.icon;
 
   return (
     <div className="np-mobile-overlay np-mobile-overlay--open">
       <div className="np-mobile-overlay__header">
         <button className="np-mobile-overlay__back" onClick={onClose}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
-        <div className="np-mobile-overlay__label">{which === 'origin' ? 'Set origin' : 'Set destination'}</div>
+        <div className="np-mobile-overlay__label">
+          {field.id === 'origin' ? 'Set origin' : 'Set destination'}
+        </div>
       </div>
       <div className="np-mobile-overlay__input-row">
-        {which === 'origin' ? <HomeIcon /> : <DestIcon />}
-        <input ref={inputRef} className="np-mobile-overlay__input" value={input} onChange={onChange} placeholder={placeholder} />
-        <button 
-          className={`np-field__clear ${input.length > 0 ? 'np-field__clear--visible' : 'np-field__clear--hidden'}`}
-          onMouseDown={onClear}
-        >
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-        </button>
+        <Icon />
+        <input ref={inputRef} className="np-mobile-overlay__input" value={input} onChange={onChange} placeholder={field.placeholder} />
+        <ClearButton visible={input.length > 0} onMouseDown={onClear} />
       </div>
       <div className="np-mobile-overlay__body">
         <SuggestionList suggestions={suggestions} onSelect={onSelect} inOverlay />
@@ -123,17 +128,16 @@ function MobileOverlay({ which, input, placeholder, suggestions, onClose, onChan
 }
 
 export default function NavPill({ onSelect }) {
-  const [originInput, setOriginInput] = useState('');
-  const [destInput, setDestInput] = useState('');
-  const [originLabel, setOriginLabel] = useState('');
-  const [destLabel, setDestLabel] = useState('');
+  const [fieldState, setFieldState] = useState({
+    origin: { input: '', label: '' },
+    dest:   { input: '', label: '' },
+  });
   const [suggestions, setSuggestions] = useState([]);
   const [activeField, setActiveField] = useState(null);
   const [mobileOverlay, setMobileOverlay] = useState(null);
 
   const pillRef = useRef(null);
-  const originInputRef = useRef(null);
-  const destInputRef = useRef(null);
+  const inputRefs = useRef({ origin: null, dest: null });
   const mobileInputRef = useRef(null);
   const timer = useRef(null);
   const requestSeq = useRef(0);
@@ -149,9 +153,7 @@ export default function NavPill({ onSelect }) {
     const handler = (e) => {
       if (!pillRef.current?.contains(e.target)) {
         setActiveField(null);
-        clearTimeout(timer.current);
-        requestSeq.current += 1;
-        setSuggestions([]);
+        invalidateSuggestions();
       }
     };
     document.addEventListener('mousedown', handler);
@@ -164,154 +166,113 @@ export default function NavPill({ onSelect }) {
     setSuggestions([]);
   }
 
-  async function getSuggestions(value) {
-    if (value.length < 3) {
-      invalidateSuggestions();
-      return;
-    }
-
+  async function fetchSuggestions(value) {
+    if (value.length < 3) { invalidateSuggestions(); return; }
     const requestId = ++requestSeq.current;
-
     try {
       const results = await places.autocomplete(value);
-      if (requestId !== requestSeq.current) return;
-      setSuggestions(results.slice(0, 5));
-    } catch (err) {
-      if (requestId === requestSeq.current) {
-        setSuggestions([]);
-      }
+      if (requestId === requestSeq.current) setSuggestions(results.slice(0, 5));
+    } catch {
+      if (requestId === requestSeq.current) setSuggestions([]);
     }
   }
 
-  function handleChange(setter, e) {
-    const value = e.target.value;
-    setter(value);
+  function handleChange(fieldId, value) {
+    setFieldState(prev => ({ ...prev, [fieldId]: { ...prev[fieldId], input: value } }));
     clearTimeout(timer.current);
+    if (value.length < 3) { invalidateSuggestions(); return; }
+    timer.current = setTimeout(() => fetchSuggestions(value), DELAY);
+  }
 
-    if (value.length < 3) {
-      invalidateSuggestions();
-      return;
-    }
+  function handleActivate(fieldId, value) {
+    setActiveField(fieldId);
+    value.length >= 3 ? fetchSuggestions(value) : invalidateSuggestions();
+  }
 
-    timer.current = setTimeout(() => getSuggestions(value), DELAY);
+  function handleMobileOpen(fieldId, value) {
+    setMobileOverlay(fieldId);
+    value.length >= 3 ? fetchSuggestions(value) : invalidateSuggestions();
   }
 
   function handleSelect(suggestion) {
     const { placeId, text } = suggestion.placePrediction;
     const label = text.text;
-    if (activeField === 'origin' || mobileOverlay === 'origin') {
-      setOriginInput(label); setOriginLabel(label);
-    } else {
-      setDestInput(label); setDestLabel(label);
-    }
+    const fieldId = activeField ?? mobileOverlay;
+    setFieldState(prev => ({ ...prev, [fieldId]: { input: label, label } }));
     invalidateSuggestions();
-    setActiveField(null); setMobileOverlay(null);
-    onSelect?.({ field: activeField ?? mobileOverlay, label, placeId });
+    setActiveField(null);
+    setMobileOverlay(null);
+    onSelect?.({ field: fieldId, label, placeId });
   }
 
-  function handleClear(field) {
-    if (field === 'origin') {
-      setOriginInput(''); setOriginLabel(''); 
-      if (shouldRenderMobile) mobileInputRef.current?.focus();
-      else originInputRef.current?.focus(); 
-    } else {
-      setDestInput(''); setDestLabel(''); 
-      if (shouldRenderMobile) mobileInputRef.current?.focus();
-      else destInputRef.current?.focus(); 
-    }
+  function handleClear(fieldId) {
+    setFieldState(prev => ({ ...prev, [fieldId]: { input: '', label: '' } }));
     invalidateSuggestions();
+    setTimeout(() => {
+      const ref = shouldRenderMobile ? mobileInputRef : { current: inputRefs.current[fieldId] };
+      ref.current?.focus();
+    }, 0);
   }
 
-  function handleFieldActivate(field, value) {
-    setActiveField(field);
-    if (value.length >= 3) {
-      getSuggestions(value);
-    } else {
-      invalidateSuggestions();
-    }
-  }
-
-  function handleMobileOverlayOpen(field, value) {
-    setMobileOverlay(field);
-    if (value.length >= 3) {
-      getSuggestions(value);
-    } else {
-      invalidateSuggestions();
-    }
-  }
-
-  if (isMobile === null) {
-    return null;
-  }
+  if (isMobile === null) return null;
 
   if (!shouldRenderMobile) {
     return (
       <div ref={pillRef} className="np-pill-wrapper">
         <div className={`np-pill ${activeField ? 'np-pill--focused' : ''}`}>
-          <PillField
-            inputRef={originInputRef}
-            icon={<HomeIcon />}
-            label="Origin"
-            value={originInput}
-            placeholder="Where from?"
-            active={activeField === 'origin'}
-            onChange={(e) => handleChange(setOriginInput, e)}
-            onFocus={() => handleFieldActivate('origin', originInput)}
-            onClear={(e) => { e.stopPropagation(); handleClear('origin'); }}
-          />
-          <div className="np-pill__divider" />
-          <PillField
-            inputRef={destInputRef}
-            icon={<DestIcon />}
-            label="Destination"
-            value={destInput}
-            placeholder="Where to?"
-            active={activeField === 'dest'}
-            onChange={(e) => handleChange(setDestInput, e)}
-            onFocus={() => handleFieldActivate('dest', destInput)}
-            onClear={(e) => { e.stopPropagation(); handleClear('dest'); }}
-          />
+          {FIELDS.map((f, i) => (
+            <Fragment key={f.id}>
+              {i > 0 && <div className="np-pill__divider" />}
+              <PillField
+                inputRef={el => (inputRefs.current[f.id] = el)}
+                icon={f.icon}
+                label={f.label}
+                value={fieldState[f.id].input}
+                placeholder={f.placeholder}
+                active={activeField === f.id}
+                onChange={e => handleChange(f.id, e.target.value)}
+                onFocus={() => handleActivate(f.id, fieldState[f.id].input)}
+                onClear={e => { e.stopPropagation(); handleClear(f.id); }}
+              />
+            </Fragment>
+          ))}
         </div>
         {activeField && <SuggestionList suggestions={suggestions} onSelect={handleSelect} />}
       </div>
     );
   }
 
-  const mobileInput = mobileOverlay === 'origin' ? originInput : destInput;
-  const mobileSetter = mobileOverlay === 'origin' ? setOriginInput : setDestInput;
+  const overlayField = FIELDS.find(f => f.id === mobileOverlay);
 
   return (
     <>
       <div className="np-pill np-pill--mobile">
-        <div className="np-mobile-row" onClick={() => handleMobileOverlayOpen('origin', originInput)}>
-          <HomeIcon />
-          <div className="np-mobile-row__body">
-            <span className="np-field__label">Origin</span>
-            <span className={`np-mobile-row__value ${!originLabel ? 'np-mobile-row__value--placeholder' : ''}`}>
-              {originLabel || 'Where from?'}
-            </span>
-          </div>
-        </div>
-        <div className="np-pill__divider np-pill__divider--horizontal" />
-        <div className="np-mobile-row" onClick={() => handleMobileOverlayOpen('dest', destInput)}>
-          <DestIcon />
-          <div className="np-mobile-row__body">
-            <span className="np-field__label">Destination</span>
-            <span className={`np-mobile-row__value ${!destLabel ? 'np-mobile-row__value--placeholder' : ''}`}>
-              {destLabel || 'Where to?'}
-            </span>
-          </div>
-        </div>
+        {FIELDS.map((f, i) => {
+          const Icon = f.icon;
+          return (
+            <Fragment key={f.id}>
+              {i > 0 && <div className="np-pill__divider np-pill__divider--horizontal" />}
+              <div className="np-mobile-row" onClick={() => handleMobileOpen(f.id, fieldState[f.id].input)}>
+                <Icon />
+                <div className="np-mobile-row__body">
+                  <span className="np-field__label">{f.label}</span>
+                  <span className={`np-mobile-row__value ${!fieldState[f.id].label ? 'np-mobile-row__value--placeholder' : ''}`}>
+                    {fieldState[f.id].label || f.placeholder}
+                  </span>
+                </div>
+              </div>
+            </Fragment>
+          );
+        })}
       </div>
-      {mobileOverlay && (
+      {mobileOverlay && overlayField && (
         <MobileOverlay
-          which={mobileOverlay}
-          input={mobileInput}
-          placeholder={mobileOverlay === 'origin' ? 'Where from?' : 'Where to?'}
+          field={overlayField}
+          input={fieldState[mobileOverlay].input}
           suggestions={suggestions}
           inputRef={mobileInputRef}
           onClose={() => { setMobileOverlay(null); invalidateSuggestions(); }}
-          onChange={(e) => handleChange(mobileSetter, e)}
+          onChange={e => handleChange(mobileOverlay, e.target.value)}
           onSelect={handleSelect}
           onClear={() => handleClear(mobileOverlay)}
         />
