@@ -7,7 +7,6 @@
   max-width: 640px;
 }
 
-/* ── The pill itself ── */
 .np-pill {
   display: flex;
   align-items: stretch;
@@ -23,14 +22,12 @@
   box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.12);
 }
 
-/* ── Mobile stacked pill ── */
 .np-pill--mobile {
   flex-direction: column;
   border-radius: 20px;
   width: 100%;
 }
 
-/* ── Divider ── */
 .np-pill__divider {
   width: 1px;
   background: #e8e8e8;
@@ -53,22 +50,12 @@
   flex: 1;
   min-width: 0;
   border-radius: 999px;
-  transition: background 0.15s ease;
-  cursor: text;
+  position: relative; /* Anchor for absolute X button */
 }
 
-.np-field--active {
-  background: #f5f8ff;
-}
-
-.np-field__icon {
-  color: #9ca3af;
-  flex-shrink: 0;
-}
-
-.np-field--active .np-field__icon {
-  color: #4f8ef7;
-}
+.np-field--active { background: #f5f8ff; }
+.np-field__icon { color: #9ca3af; flex-shrink: 0; }
+.np-field--active .np-field__icon { color: #4f8ef7; }
 
 .np-field__body {
   display: flex;
@@ -83,187 +70,13 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #9ca3af;
-  line-height: 1;
   margin-bottom: 3px;
 }
 
-.np-field--active .np-field__label {
-  color: #4f8ef7;
-}
-
-.np-field__input {
-  border: none;
-  outline: none;
-  font-size: 14px;
-  font-weight: 500;
+.np-mobile-overlay__label {
+  font-size: 15px;
+  font-weight: 600;
   color: #111;
-  background: transparent;
-  min-width: 0;
-  width: 100%;
-}
-
-.np-field__input::placeholder {
-  color: #c0c5cf;
-  font-weight: 400;
-}
-
-/* Loading spinner */
-.np-field__loading {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #e2e2e2;
-  border-top-color: #4f8ef7;
-  border-radius: 50%;
-  animation: np-spin 0.6s linear infinite;
-  flex-shrink: 0;
-}
-
-@keyframes np-spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Clear button */
-.np-field__clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: none;
-  background: #e9eaec;
-  border-radius: 50%;
-  color: #6b7280;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.1s;
-}
-
-.np-field__clear:hover {
-  background: #d1d5db;
-}
-
-/* ── Desktop floating dropdown ── */
-.np-dropdown--floating {
-  position: fixed;
-  top: auto;
-  margin-top: 8px;
-  background: #fff;
-  border: 1.5px solid #e8e8e8;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  list-style: none;
-  padding: 6px 0;
-  z-index: 200;
-  overflow: hidden;
-  min-width: 280px;
-}
-
-.np-dropdown--overlay {
-  list-style: none;
-  padding: 6px 0;
-  margin: 0;
-  border: none;
-  background: transparent;
-}
-
-.np-dropdown__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 16px;
-  cursor: pointer;
-  transition: background 0.1s;
-}
-
-.np-dropdown__item:hover {
-  background: #f5f7ff;
-}
-
-.np-dropdown__pin {
-  color: #9ca3af;
-  flex-shrink: 0;
-  display: flex;
-}
-
-.np-dropdown__text {
-  font-size: 14px;
-  color: #1a1a1a;
-  line-height: 1.4;
-}
-
-.np-dropdown__attribution {
-  padding: 8px 16px;
-  font-size: 11px;
-  color: #c0c5cf;
-  text-align: right;
-  border-top: 1px solid #f0f0f0;
-  margin-top: 4px;
-  list-style: none;
-}
-
-/* ── Mobile rows (tappable) ── */
-.np-mobile-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  cursor: pointer;
-  transition: background 0.1s;
-}
-
-.np-mobile-row:active {
-  background: #f5f8ff;
-}
-
-.np-mobile-row__body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.np-mobile-row__value {
-  font-size: 14px;
-  font-weight: 500;
-  color: #111;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.np-mobile-row__value--placeholder {
-  color: #c0c5cf;
-  font-weight: 400;
-}
-
-/* ── Mobile overlay ── */
-.np-mobile-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  transform: translateY(100%);
-  opacity: 0;
-  pointer-events: none;
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.2s ease;
-}
-
-.np-mobile-overlay--open {
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.np-mobile-overlay__header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 16px;
-  padding-top: max(14px, env(safe-area-inset-top));
-  border-bottom: 1px solid #f0f0f0;
 }
 
 .np-mobile-overlay__back {
@@ -281,54 +94,92 @@
   transition: background 0.1s;
 }
 
-.np-mobile-overlay__back:hover {
-  background: #f3f4f6;
-}
-
-.np-mobile-overlay__label {
-  font-size: 15px;
-  font-weight: 600;
-  color: #111;
-}
-
-.np-mobile-overlay__input-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.np-mobile-overlay__input-row .np-field__icon {
-  color: #4f8ef7;
-}
-
-.np-mobile-overlay__input {
-  flex: 1;
+.np-field__input, .np-mobile-overlay__input {
   border: none;
   outline: none;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: #111;
   background: transparent;
+  width: 100%;
+  padding-right: 35px; /* RESERVED SPACE FOR X */
 }
 
-.np-mobile-overlay__input::placeholder {
-  color: #c0c5cf;
-  font-weight: 400;
+/* ── Clear Button Logic (CSS Method) ── */
+.np-field__clear {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: #e9eaec;
+  border-radius: 50%;
+  color: #6b7280;
+  cursor: pointer;
+  z-index: 5;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
-.np-mobile-overlay__body {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: env(safe-area-inset-bottom, 16px);
+.np-field__clear--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-.np-mobile-overlay__hint {
-  padding: 40px 24px;
-  text-align: center;
-  font-size: 14px;
-  color: #9ca3af;
-  line-height: 1.6;
+.np-field__clear--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
+
+/* ── Dropdown ── */
+.np-dropdown--floating {
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0; /* Matches width of pill automatically */
+  margin-top: 8px;
+  background: #fff;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+  overflow: hidden;
+  padding: 6px 0;
+}
+
+.np-dropdown--overlay { list-style: none; padding: 0; position: static; }
+
+.np-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+}
+
+.np-dropdown__item:hover { background: #f5f7ff; }
+.np-dropdown__text { font-size: 14px; color: #1a1a1a; }
+.np-dropdown__attribution { padding: 8px 16px; font-size: 11px; color: #c0c5cf; text-align: right; border-top: 1px solid #f0f0f0; }
+
+/* ── Mobile UI ── */
+.np-mobile-row { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: pointer; }
+.np-mobile-row__body { display: flex; flex-direction: column; min-width: 0; }
+.np-mobile-row__value { font-size: 14px; font-weight: 500; color: #111; overflow: hidden; text-overflow: ellipsis; }
+
+.np-mobile-overlay {
+  position: fixed; inset: 0; z-index: 300; background: #fff;
+  display: flex; flex-direction: column;
+  transform: translateY(100%); transition: transform 0.28s ease, opacity 0.2s ease;
+  opacity: 0; pointer-events: none;
+}
+
+.np-mobile-overlay--open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+
+.np-mobile-overlay__header { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; }
+.np-mobile-overlay__input-row { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid #f0f0f0; position: relative; }
+.np-mobile-overlay__body { flex: 1; overflow-y: auto; }
