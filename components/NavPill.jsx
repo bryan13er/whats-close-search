@@ -33,8 +33,8 @@ function SuggestionList({ suggestions, onSelect, inOverlay = false }) {
   if (!suggestions.length) return null;
   return (
     <ul className={`np-dropdown ${inOverlay ? 'np-dropdown--overlay' : 'np-dropdown--floating'}`}>
-      {suggestions.map((s, i) => (
-        <li key={i} className="np-dropdown__item" onMouseDown={() => onSelect(s)}>
+      {suggestions.map((s) => (
+        <li aria-label={s.placePrediction.placeId} key={s.placePrediction.placeId} className="np-dropdown__item" onMouseDown={() => onSelect(s)}>
           <span className="np-dropdown__pin">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
               <path d="M8 1.5C5.51 1.5 3.5 3.51 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.49-2.01-4.5-4.5-4.5zm0 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="currentColor" />
@@ -151,6 +151,7 @@ export default function NavPill({ onSelect }) {
 
   useEffect(() => {
     const handler = (e) => {
+      if (mobileOverlay) return;
       if (!pillRef.current?.contains(e.target)) {
         setActiveField(null);
         invalidateSuggestions();
@@ -158,7 +159,7 @@ export default function NavPill({ onSelect }) {
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [mobileOverlay]);
 
   function invalidateSuggestions() {
     clearTimeout(timer.current);
@@ -246,7 +247,7 @@ export default function NavPill({ onSelect }) {
 
   return (
     <>
-      <div className="np-pill np-pill--mobile">
+      <div ref={pillRef} className="np-pill np-pill--mobile">
         {FIELDS.map((f, i) => {
           const Icon = f.icon;
           return (
