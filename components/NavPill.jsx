@@ -4,7 +4,8 @@ import { PlacesAPI } from '@/lib/AutoCompleteAPI';
 import './NavPill.css';
 
 const places = new PlacesAPI(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
-const DELAY = 275;
+const DELAY = 600; // SAVE MONEY on calls
+const INPUT_CHAR_MIN = 5;
 
 const FIELDS = [
   { id: 'origin', label: 'Origin', placeholder: 'Where from?', icon: HomeIcon },
@@ -168,7 +169,7 @@ export default function NavPill({ onSelect }) {
   }
 
   async function fetchSuggestions(value) {
-    if (value.length < 3) { invalidateSuggestions(); return; }
+    if (value.length < INPUT_CHAR_MIN) { invalidateSuggestions(); return; }
     const requestId = ++requestSeq.current;
     try {
       const results = await places.autocomplete(value);
@@ -181,7 +182,7 @@ export default function NavPill({ onSelect }) {
   function handleChange(fieldId, value) {
     setFieldState(prev => ({ ...prev, [fieldId]: { ...prev[fieldId], input: value } }));
     clearTimeout(timer.current);
-    if (value.length < 3) { invalidateSuggestions(); return; }
+    if (value.length < INPUT_CHAR_MIN) { invalidateSuggestions(); return; }
     timer.current = setTimeout(() => fetchSuggestions(value), DELAY);
   }
 
@@ -203,7 +204,22 @@ export default function NavPill({ onSelect }) {
     invalidateSuggestions();
     setActiveField(null);
     setMobileOverlay(null);
-    onSelect?.({ field: fieldId, label, placeId });
+    
+    // Once something is selected then get their lat and long from geocode call
+    places.getGeocodeV3(placeId).then(({ location }) => {
+      const place = {
+        field: fieldId,
+        label,
+        placeId,
+        lat: location.latitude,
+        lng: location.longitude,
+      };
+      console.log(place);
+      onSelect?.(place);
+    }).catch((err) => {
+      console.error('Geocode failed:', err);
+      // optionally notify the user
+    });
   }
 
   function handleClear(fieldId) {
