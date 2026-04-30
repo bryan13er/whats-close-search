@@ -1,0 +1,106 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   BottomSheet — Apple Maps–style draggable bottom sheet
+   Light mode: frosted-glass white card over the dark map background.
+   Dark mode:  deep translucent charcoal, matching Apple Maps dark theme.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Desktop pass-through shell (centers children like the old page-shell) ── */
+.bs-desktop-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ── Mobile sheet card ── */
+.bs-sheet {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Full-height so content fills all three snap positions without reflowing */
+  height: 100dvh;
+  z-index: 100;
+
+  /* Frosted-glass card — only rounded at top corners (Apple Maps style) */
+  border-radius: 22px 22px 0 0;
+  background: rgba(255, 255, 255, 0.91);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+
+  /* Elevation shadow that faces downward (away from the visible card area) */
+  box-shadow:
+    0 -2px 0 rgba(0, 0, 0, 0.06),
+    0 -8px 32px rgba(0, 0, 0, 0.18),
+    0 -1px 0 rgba(255, 255, 255, 0.5) inset;
+
+  /* GPU-composited transform for 60 fps drag — JS sets this directly */
+  will-change: transform;
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Handle zone — full-width touch target for dragging ── */
+.bs-handle-zone {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Generous touch target — enough height to grab comfortably */
+  padding: 14px 0 10px;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bs-handle-zone:active {
+  cursor: grabbing;
+}
+
+/* Pill indicator — same proportions as Apple Maps / iOS sheets */
+.bs-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.18);
+  transition: background 0.15s ease;
+}
+
+.bs-handle-zone:active .bs-handle {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+/* ── Content area ── */
+/*
+  Must be a flex column so that NavPill's np-sheet-content can fill it with
+  flex: 1 and independently scroll the suggestions list while the field rows
+  stay pinned at the top of the card (mirrors the Apple Maps layout).
+*/
+.bs-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Dark mode ── */
+@media (prefers-color-scheme: dark) {
+  .bs-sheet {
+    background: rgba(26, 26, 28, 0.93);
+    box-shadow:
+      0 -2px 0 rgba(255, 255, 255, 0.06),
+      0 -8px 40px rgba(0, 0, 0, 0.45),
+      0 -1px 0 rgba(255, 255, 255, 0.08) inset;
+  }
+
+  .bs-handle {
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .bs-handle-zone:active .bs-handle {
+    background: rgba(255, 255, 255, 0.38);
+  }
+}
