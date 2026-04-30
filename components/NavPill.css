@@ -94,11 +94,11 @@
   margin-bottom: 3px;
 }
 
-/* ── Input ── */
-.np-field__input,
-.np-mobile-overlay__input {
+/* ── Desktop pill input ── */
+.np-field__input {
   border: none;
   outline: none;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 500;
   color: var(--np-color-text-primary);
@@ -192,90 +192,150 @@
   border-top: 1px solid var(--np-color-border-xlight);
 }
 
-/* ── Mobile UI ── */
-.np-mobile-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  cursor: pointer;
-}
+/* ─────────────────────────────────────────────────────────────────────────────
+   Mobile sheet layout (replaces the old full-screen MobileOverlay)
+   These styles render inside the BottomSheet card.
+───────────────────────────────────────────────────────────────────────────── */
 
-.np-mobile-row__body {
+/*
+  Outer wrapper — fills bs-content (which is a flex column) via flex: 1.
+  Sets up the column layout so np-sheet-fields is fixed and
+  np-sheet-suggestions scrolls independently below it.
+*/
+.np-sheet-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  overflow: hidden;
+  min-height: 0; /* required for flex children to shrink+scroll correctly */
 }
 
-.np-mobile-row__value {
-  font-size: 14px;
+/* ── Field rows container ── */
+.np-sheet-fields {
+  flex-shrink: 0;
+}
+
+.np-sheet-fields__divider {
+  height: 1px;
+  background: var(--np-color-border-xlight);
+  margin: 0 20px;
+}
+
+/* ── Individual field row ── */
+.np-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  min-height: 58px;
+  cursor: pointer;
+  /* Tap highlight for iOS — suppressed in favour of the --active background */
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s ease;
+}
+
+.np-sheet-row:active {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Active row: show the accent tint, disable the tap cursor */
+.np-sheet-row--active {
+  background: var(--np-color-accent-bg);
+  cursor: default;
+}
+
+.np-sheet-row__icon-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--np-color-text-muted);
+}
+
+.np-sheet-row--active .np-sheet-row__icon-wrap {
+  color: var(--np-color-accent);
+}
+
+.np-sheet-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.np-sheet-row__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--np-color-text-muted);
+}
+
+.np-sheet-row--active .np-sheet-row__label {
+  color: var(--np-color-accent);
+}
+
+/* Static value display (inactive row) */
+.np-sheet-row__value {
+  font-size: 15px;
   font-weight: 500;
   color: var(--np-color-text-primary);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.np-mobile-row__value--placeholder {
+.np-sheet-row__value--placeholder {
   color: var(--np-color-text-muted);
+  font-weight: 400;
 }
 
-.np-mobile-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
-  background: var(--np-color-bg);
-  display: flex;
-  flex-direction: column;
-  transform: translateY(100%);
-  transition: transform 0.28s ease, opacity 0.2s ease;
-  opacity: 0;
-}
-
-.np-mobile-overlay--open {
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.np-mobile-overlay__header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--np-color-border-xlight);
-}
-
-.np-mobile-overlay__label {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--np-color-text-primary);
-}
-
-.np-mobile-overlay__back {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
+/* Live input (active row) — frameless, blends into the row */
+.np-sheet-row__input {
   border: none;
-  background: none;
-  color: var(--np-color-text-secondary);
-  cursor: pointer;
-  border-radius: 8px;
-  transition: background 0.1s;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--np-color-text-primary);
+  width: 100%;
+  padding-right: 32px; /* room for clear button */
 }
 
-.np-mobile-overlay__input-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--np-color-border-xlight);
-  position: relative;
-  --np-color-text-muted: var(--np-color-accent);
+.np-sheet-row__input::placeholder {
+  color: var(--np-color-text-muted);
+  font-weight: 400;
 }
 
-.np-mobile-overlay__body {
+/* ── Suggestions section (below the field rows) ── */
+.np-sheet-suggestions {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid var(--np-color-border-xlight);
+}
+
+/* ── Dark mode tweaks for sheet rows ── */
+@media (prefers-color-scheme: dark) {
+  .np-sheet-row:active {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .np-sheet-row--active {
+    background: rgba(79, 142, 247, 0.12);
+  }
+
+  :root {
+    --np-color-bg: transparent;
+    --np-color-text-primary: #f0f0f5;
+    --np-color-text-secondary: #c0c0cc;
+    --np-color-text-muted: #888899;
+    --np-color-text-faint: #777788;
+    --np-color-border: rgba(255, 255, 255, 0.12);
+    --np-color-border-light: rgba(255, 255, 255, 0.09);
+    --np-color-border-xlight: rgba(255, 255, 255, 0.07);
+    --np-color-item-hover: rgba(255, 255, 255, 0.06);
+    --np-color-clear-bg: rgba(255, 255, 255, 0.12);
+  }
 }

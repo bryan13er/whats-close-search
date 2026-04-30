@@ -1,7 +1,53 @@
-.page-shell {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+/* ─────────────────────────────────────────────────────────────────────────────
+   Satellite-style map background
+   Visible on mobile behind the bottom sheet. Hidden on desktop (the
+   BottomSheet desktop shell provides its own centred layout instead).
+───────────────────────────────────────────────────────────────────────────── */
+.page-map-bg {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .page-map-bg {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+
+    /*
+      Layered radial gradients simulate satellite imagery:
+        · Olive-green blobs → vegetation / parks
+        · Deep-blue blobs   → water bodies
+        · Dark slate base   → urban / road surface
+    */
+    background:
+      radial-gradient(ellipse 480px 340px at 18% 28%, rgba(38, 82, 50, 0.42) 0%, transparent 70%),
+      radial-gradient(ellipse 360px 280px at 78% 65%, rgba(30, 68, 44, 0.36) 0%, transparent 70%),
+      radial-gradient(ellipse 560px 220px at 62% 18%, rgba(18, 52, 94, 0.46) 0%, transparent 70%),
+      radial-gradient(ellipse 300px 300px at 90% 10%, rgba(14, 44, 80, 0.34) 0%, transparent 70%),
+      linear-gradient(158deg, #1e2a3a 0%, #141e2b 48%, #1a2534 100%);
+  }
+
+  /* Fine street grid + major road grid overlaid on the map */
+  .page-map-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      /* Minor streets */
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      /* Major roads (brighter, wider grid) */
+      linear-gradient(rgba(255, 255, 255, 0.065) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.065) 2px, transparent 2px);
+    background-size: 28px 28px, 28px 28px, 140px 140px, 140px 140px;
+  }
+
+  /* Subtle vignette — darkens edges so the sheet card pops */
+  .page-map-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 90% 90% at 50% 40%, transparent 50%, rgba(0, 0, 0, 0.38) 100%);
+  }
 }
